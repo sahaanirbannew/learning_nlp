@@ -13,6 +13,7 @@
 # Date: 21.06.2019
 # Version: 0.1 [Draft]
 ########################################################################################################################
+import nltk
 
 
 def word_tokenise(text):
@@ -25,7 +26,7 @@ def word_tokenise(text):
 def remove_stopwords(word_tokens):
     from nltk.corpus import stopwords
     stop_words = set(stopwords.words('english'))
-    custom_stop_words = ['RT']      # This should come from a custom file.
+    custom_stop_words = ['RT', ':D', ':P', ':/']      # This should come from a custom file.
     symbols = ['~', '`', '!', '@', '#', '$', '%', '^', '*', '(', ')', '-', '{', '}', '[', ']', '|', ':',
                ';', '"', '<', '>', ',', '.', '/', '?']
 
@@ -33,7 +34,6 @@ def remove_stopwords(word_tokens):
     text_wo_stopwords = [w for w in word_tokens if not w in stop_words]
     text_wo_stopwords = [w for w in text_wo_stopwords if not w in custom_stop_words]
     text_wo_symbols = [w for w in text_wo_stopwords if not w in symbols]
-    #print(text_wo_symbols)
     return text_wo_symbols
 
 
@@ -77,8 +77,6 @@ def words_pos_tagged(word_list):
 def return_noun_list(word_list):
     # Reading the POS tagging & printing the nouns:
     nouns = [w for w in word_list if w[1] == 'NN' or w[1] == 'NNS' or w[1] == 'NN$']
-    #print("----------------------\nReturned nouns:")
-    #print(nouns)
     return nouns
 
 
@@ -90,3 +88,37 @@ def create_n_grams(text, n):
         ngrams.append(words[i:i+n])
     #print(ngrams)
     return ngrams
+
+
+def text_chunking_1(text_pos_tagged):
+    from nltk import  RegexpParser
+    grammar = "NP: {<DT>?<JJ>*<NN>}"
+    cp = RegexpParser(grammar)
+    chunk = cp.parse(text_pos_tagged)
+    return chunk
+
+
+def text_chunking_2(text_pos_tagged):
+    from nltk import RegexpParser
+    # I did not understand how the grammar is made in the program.
+    # The logic part I understood.
+    grammar = r"""
+              NP: {<DT|PP\$>?<JJ>*<NN|NNS|NN$>}
+              {<DT|PP\$>?<VB|VBG><NN|NNS|NN$>} 
+              {<VB|VBG|VBN>?<NN|NNS|NN$>} 
+              {<NNP>+}               
+              {<NN>+}
+               """
+    cp = RegexpParser(grammar)
+    chunk = cp.parse(text_pos_tagged)
+    return chunk
+
+
+def return_NP(chunk):
+    np_list = []
+    for subtree in chunk.subtrees():
+        if subtree.label() == 'NP':
+            t = subtree
+            t = ' '.join(word for word, pos in t.leaves())
+            np_list.append(t)
+    return np_list
